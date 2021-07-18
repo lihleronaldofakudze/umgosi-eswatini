@@ -1,5 +1,8 @@
 import React from "react";
 
+//React Router
+import { useHistory } from "react-router-dom";
+
 //Material UI
 import CardActionArea from "@material-ui/core/CardActionArea";
 import CardContent from "@material-ui/core/CardContent";
@@ -13,6 +16,10 @@ import Card from "@material-ui/core/Card";
 import Grid from "@material-ui/core/Grid";
 
 const Post = ({ post }) => {
+  const history = useHistory();
+  const changePage = (link) => {
+    history.push(link);
+  };
   return (
     <Grid item xs={12}>
       <Card>
@@ -23,9 +30,9 @@ const Post = ({ post }) => {
             </Avatar>
           }
           title={post.displayName}
-          subheader={post.postedAt}
+          subheader={post.postedAt.seconds}
         />
-        <CardActionArea>
+        <CardActionArea onClick={() => changePage(`/comments/${post.id}`)}>
           {/* <CardMedia
             image="/static/images/cards/contemplative-reptile.jpg"
             title="Contemplative Reptile"

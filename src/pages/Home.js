@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 
 //React Router
 import { Redirect } from "react-router-dom";
@@ -17,13 +17,6 @@ import AppBar from "@material-ui/core/AppBar";
 import Dialog from "@material-ui/core/Dialog";
 import Grid from "@material-ui/core/Grid";
 import Fab from "@material-ui/core/Fab";
-import CardActionArea from "@material-ui/core/CardActionArea";
-import CardContent from "@material-ui/core/CardContent";
-import CardActions from "@material-ui/core/CardActions";
-import CardHeader from "@material-ui/core/CardHeader";
-import CardMedia from "@material-ui/core/CardMedia";
-import Avatar from "@material-ui/core/Avatar";
-import Card from "@material-ui/core/Card";
 
 //Material Icons
 import AddIcon from "@material-ui/icons/Add";
@@ -56,8 +49,12 @@ const Home = () => {
   const postsRef = firestore.collection("posts");
   const query = postsRef.orderBy("postedAt").limit(24);
   const [posts] = useCollectionData(query, { idField: "id" });
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const [message, setMessage] = useState();
+
+  useEffect(() => {
+    console.log(posts);
+  }, [posts]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -106,49 +103,7 @@ const Home = () => {
       <div className="sized_box_1"></div>
       <Container maxWidth="sm">
         <Grid container spacing={2}>
-          {posts &&
-            posts.map((post) => (
-              <Grid item xs={12}>
-                <Card>
-                  <CardHeader
-                    avatar={
-                      <Avatar aria-label="recipe">
-                        <img
-                          src={post.photoURL}
-                          alt={post.displayName}
-                          width="100%"
-                        />
-                      </Avatar>
-                    }
-                    title={post.displayName}
-                    subheader={post.postedAt}
-                  />
-                  <CardActionArea>
-                    {/* <CardMedia
-            image="/static/images/cards/contemplative-reptile.jpg"
-            title="Contemplative Reptile"
-          /> */}
-                    <CardContent>
-                      <Typography
-                        variant="h5"
-                        color="textSecondary"
-                        component="p"
-                      >
-                        {post.message}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
-                  <CardActions>
-                    <Button size="small" color="primary">
-                      Like
-                    </Button>
-                    <Button size="small" color="primary">
-                      Comment
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
+          {posts && posts.map((post) => <Post key={post.id} post={post} />)}
         </Grid>
       </Container>
       <Fab
