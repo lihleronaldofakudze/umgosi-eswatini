@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from "react";
+import React, { useState } from "react";
 
 //React Router
 import { useParams } from "react-router-dom";
@@ -13,16 +13,16 @@ import IconButton from "@material-ui/core/IconButton";
 import TextField from "@material-ui/core/TextField";
 import Container from "@material-ui/core/Container";
 import Toolbar from "@material-ui/core/Toolbar";
-import Avatar from "@material-ui/core/Avatar";
 import AppBar from "@material-ui/core/AppBar";
-import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 
 //Material Icon
 import SendRounded from "@material-ui/icons/SendRounded";
 
+//Components
+import Comment from "../components/Comment";
+
 //Firebase
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import firebase, { auth, firestore } from "../services/firebase.js";
 
@@ -54,7 +54,6 @@ const useStyles = makeStyles((theme) => ({
 const Comments = () => {
   const classes = useStyles();
   const { id } = useParams();
-  const [user] = useAuthState(auth);
   const commentsRef = firestore
     .collection("posts")
     .doc(id)
@@ -94,8 +93,8 @@ const Comments = () => {
       <Toolbar />
       <Container maxWidth="sm">
         <Grid container>
-          {messages.map((message) => (
-            <Comment key={message.id} comment={comment} />
+          {comments.map((comment) => (
+            <Comment key={comment.id} comment={comment} />
           ))}
         </Grid>
       </Container>

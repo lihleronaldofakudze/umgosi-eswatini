@@ -10,11 +10,21 @@ import clsx from "clsx";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import Typography from "@material-ui/core/Typography";
 import Container from "@material-ui/core/Container";
+import Grid from "@material-ui/core/Grid";
 import Button from "@material-ui/core/Button";
 import Paper from "@material-ui/core/Paper";
 
+//Component
+import Donator from "../components/Donator";
+
 //Firebase
 import firebase, { auth } from "../services/firebase";
+
+//Images
+import Umgosee from "../images/umgosee.png";
+
+//Data
+import donators from "../services/donators_data";
 
 const useStyles = makeStyles((theme) => {
   return {
@@ -44,12 +54,9 @@ const Login = () => {
   };
   return (
     <Container maxWidth="sm">
-      <div className="sized_box_3"></div>
+      <div className="sized_box_1"></div>
       <Paper className={clsx(classes.paper, "sized_box_1")}>
-        <Typography variant="h4" color="inherit">
-          Welcome to <br />
-          Umgosi Eswatini
-        </Typography>
+        <img src={Umgosee} alt="Umgosi Eswatini" width="50%" />
         <Typography variant="body1" color="inherit">
           Welcome to Umgosi Eswatini
         </Typography>
@@ -78,7 +85,17 @@ const Login = () => {
         <Typography variant="h6" color="inherit">
           Donators
         </Typography>
+        <Grid container alignItems="center" justifyContent="space-between">
+          {donators.map((donator, index) => (
+            <Donator key={index} donator={donator} />
+          ))}
+        </Grid>
+        <div className="sized_box_1"></div>
+        <Button variant="contained" color="secondary">
+          Why Donate?
+        </Button>
       </Paper>
+      <div className="sized_box_1"></div>
     </Container>
   );
 };
