@@ -13,7 +13,7 @@ import Home from "./pages/Home";
 
 const theme = createTheme({
   typography: {
-    fontFamily: "Quicksand",
+    fontFamily: "Nunito",
   },
 });
 
@@ -28,7 +28,7 @@ function App() {
           <Route exact path="/login">
             <Login />
           </Route>
-          <Route exact path="/comments">
+          <Route exact path="/comments/:post/:id">
             <Comments />
           </Route>
         </Switch>

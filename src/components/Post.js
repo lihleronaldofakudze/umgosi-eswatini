@@ -31,7 +31,9 @@ const Post = ({ post }) => {
           title={post.displayName}
           subheader={post.postedAt.seconds}
         />
-        <CardActionArea onClick={() => changePage(`/comments/${post.id}`)}>
+        <CardActionArea
+          onClick={() => changePage(`/comments/${post.message}/${post.id}`)}
+        >
           {/* <CardMedia
             image="/static/images/cards/contemplative-reptile.jpg"
             title="Contemplative Reptile"

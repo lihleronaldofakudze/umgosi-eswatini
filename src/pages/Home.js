@@ -4,6 +4,7 @@ import React, { useState, useEffect, Fragment } from "react";
 import { Redirect } from "react-router-dom";
 
 //Material UI
+import DialogContentText from "@material-ui/core/DialogContentText";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -51,6 +52,8 @@ const Home = () => {
   const [posts] = useCollectionData(query, { idField: "id" });
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState();
+  const [openAlert, setOpenAlert] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState();
 
   useEffect(() => {
     console.log(posts);
@@ -63,26 +66,52 @@ const Home = () => {
   const handleClose = () => {
     setOpen(false);
   };
-  const makeAPost = async () => {
-    const { uid, photoURL, displayName } = auth.currentUser;
 
-    await postsRef
-      .add({
-        message: message,
-        uid: uid,
-        photoURL: photoURL,
-        displayName: displayName,
-        postedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        likes: 0,
-      })
-      .then((_) => {
-        handleClose();
-      });
+  const handleClickOpenAlert = () => {
+    setOpenAlert(true);
+  };
+
+  //Close Alert Dialog
+  const handleCloseAlert = () => {
+    setOpenAlert(false);
+  };
+
+  const makeAPost = async () => {
+    if (message) {
+      const { uid, photoURL, displayName } = auth.currentUser;
+
+      await postsRef
+        .add({
+          message: message,
+          uid: uid,
+          photoURL: photoURL,
+          displayName: displayName,
+          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          likes: 0,
+        })
+        .then((_) => {
+          handleClose();
+        })
+        .catch((error) => {
+          setDialogMessage(error.message);
+          handleClickOpenAlert();
+        });
+    } else {
+      handleClose();
+      setDialogMessage("Please enter post message first");
+      handleClickOpenAlert();
+    }
   };
   const signOut = async () => {
-    await auth.signOut().then((_) => {
-      window.location.reload();
-    });
+    await auth
+      .signOut()
+      .then((_) => {
+        window.location.reload();
+      })
+      .catch((error) => {
+        setDialogMessage(error.message);
+        handleClickOpenAlert();
+      });
   };
   if (user === null) {
     return <Redirect to="/login" />;
@@ -138,6 +167,24 @@ const Home = () => {
           </Button>
           <Button onClick={makeAPost} color="primary">
             Post
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openAlert}
+        onClose={handleCloseAlert}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Umgosi Eswatini</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {dialogMessage}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAlert} color="primary" autoFocus>
+            Close
           </Button>
         </DialogActions>
       </Dialog>

@@ -7,13 +7,19 @@ import { useParams } from "react-router-dom";
 import clsx from "clsx";
 
 //Material UI
+import DialogContentText from "@material-ui/core/DialogContentText";
 import makeStyles from "@material-ui/core/styles/makeStyles";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogTitle from "@material-ui/core/DialogTitle";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import TextField from "@material-ui/core/TextField";
 import Container from "@material-ui/core/Container";
 import Toolbar from "@material-ui/core/Toolbar";
 import AppBar from "@material-ui/core/AppBar";
+import Button from "@material-ui/core/Button";
+import Dialog from "@material-ui/core/Dialog";
 import Grid from "@material-ui/core/Grid";
 
 //Material Icon
@@ -53,29 +59,49 @@ const useStyles = makeStyles((theme) => ({
 
 const Comments = () => {
   const classes = useStyles();
-  const { id } = useParams();
+  const [dialogMessage, setDialogMessage] = useState();
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState();
+  const { post, id } = useParams();
   const commentsRef = firestore
     .collection("posts")
     .doc(id)
     .collection("comments");
   const query = commentsRef.orderBy("postedAt").limit(24);
   const [comments] = useCollectionData(query, { idField: "id" });
-  const [message, setMessage] = useState();
+
+  //Open Alert Dialog
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  //Close Alert Dialog
+  const handleClose = () => {
+    setOpen(false);
+  };
 
   const sendMessage = async () => {
-    const { uid, photoURL, displayName } = auth.currentUser;
-
-    await commentsRef
-      .add({
-        message: message,
-        uid: uid,
-        photoURL: photoURL,
-        displayName: displayName,
-        postedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      })
-      .then((_) => {
-        setMessage("");
-      });
+    if (message) {
+      const { uid, photoURL, displayName } = auth.currentUser;
+      await commentsRef
+        .add({
+          message: message,
+          uid: uid,
+          photoURL: photoURL,
+          displayName: displayName,
+          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then((_) => {
+          setMessage("");
+        })
+        .catch((error) => {
+          setDialogMessage(error.message);
+          handleClickOpen();
+        });
+    } else {
+      setDialogMessage("Please enter message first");
+      handleClickOpen();
+    }
   };
 
   return (
@@ -83,9 +109,7 @@ const Comments = () => {
       <AppBar position="fixed" color="inherit">
         <Toolbar className={clsx("sized_box_1", classes.post)}>
           <Typography variant="h5">
-            <strong>
-              Ullamco commodo nulla occaecat nostrud non consequat.
-            </strong>
+            <strong>{post}</strong>
           </Typography>
         </Toolbar>
       </AppBar>
@@ -93,25 +117,31 @@ const Comments = () => {
       <Toolbar />
       <Container maxWidth="sm">
         <Grid container>
-          {comments.map((comment) => (
-            <Comment key={comment.id} comment={comment} />
-          ))}
+          {comments &&
+            comments.map((comment) => (
+              <Comment key={comment.id} comment={comment} />
+            ))}
         </Grid>
       </Container>
       <footer className={classes.footer}>
         <Container maxWidth="sm" className={classes.message_form}>
-          <Grid container alignsItems="center" className={"sized_box_1"}>
-            <Grid xs={10}>
+          <Grid
+            container
+            alignItems="center"
+            spacing={1}
+            className={"sized_box_1"}
+          >
+            <Grid item xs={10}>
               <TextField
                 label="Enter message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                fulWidth
+                fullWidth
                 className={classes.text_field}
                 variant="outlined"
               />
             </Grid>
-            <Grid xs={2}>
+            <Grid item xs={2}>
               <IconButton className={classes.send_button} onClick={sendMessage}>
                 <SendRounded />
               </IconButton>
@@ -119,6 +149,24 @@ const Comments = () => {
           </Grid>
         </Container>
       </footer>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Umgosi Eswatini</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {dialogMessage}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary" autoFocus>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
