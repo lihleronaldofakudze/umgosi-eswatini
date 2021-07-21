@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 //React Router
-import { useParams } from "react-router-dom";
+import { useParams, Redirect } from "react-router-dom";
 
 //Extras
 import clsx from "clsx";
@@ -27,6 +27,7 @@ import SendRounded from "@material-ui/icons/SendRounded";
 
 //Components
 import Comment from "../components/Comment";
+import OtherComment from "../components/OtherComment";
 
 //Firebase
 import { useCollectionData } from "react-firebase-hooks/firestore";
@@ -61,7 +62,7 @@ const Comments = () => {
   const classes = useStyles();
   const [dialogMessage, setDialogMessage] = useState();
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState();
+  const [message, setMessage] = useState("");
   const { post, id } = useParams();
   const commentsRef = firestore
     .collection("posts")
@@ -69,6 +70,10 @@ const Comments = () => {
     .collection("comments");
   const query = commentsRef.orderBy("postedAt").limit(24);
   const [comments] = useCollectionData(query, { idField: "id" });
+
+  const user = auth.currentUser;
+
+  const dummy = useRef();
 
   //Open Alert Dialog
   const handleClickOpen = () => {
@@ -93,6 +98,7 @@ const Comments = () => {
         })
         .then((_) => {
           setMessage("");
+          dummy.current.scrollIntoView({ behavior: "smooth" });
         })
         .catch((error) => {
           setDialogMessage(error.message);
@@ -103,6 +109,10 @@ const Comments = () => {
       handleClickOpen();
     }
   };
+
+  if (user === null) {
+    return <Redirect to="/" />;
+  }
 
   return (
     <div className={classes.root}>
@@ -116,13 +126,18 @@ const Comments = () => {
       <Toolbar />
       <Toolbar />
       <Container maxWidth="sm">
-        <Grid container>
+        <Grid container alignItems="center" spacing={1}>
           {comments &&
-            comments.map((comment) => (
-              <Comment key={comment.id} comment={comment} />
-            ))}
+            comments.map((comment) => {
+              return user.uid === comment.uid ? (
+                <OtherComment key={comment.id} comment={comment} />
+              ) : (
+                <Comment key={comment.id} comment={comment} />
+              );
+            })}
         </Grid>
       </Container>
+      <div ref={dummy}></div>
       <footer className={classes.footer}>
         <Container maxWidth="sm" className={classes.message_form}>
           <Grid

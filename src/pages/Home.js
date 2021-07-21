@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, Fragment } from "react";
 
 //React Router
 import { Redirect } from "react-router-dom";
@@ -51,13 +51,9 @@ const Home = () => {
   const query = postsRef.orderBy("postedAt").limit(24);
   const [posts] = useCollectionData(query, { idField: "id" });
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState();
+  const [message, setMessage] = useState("");
   const [openAlert, setOpenAlert] = useState(false);
   const [dialogMessage, setDialogMessage] = useState();
-
-  useEffect(() => {
-    console.log(posts);
-  }, [posts]);
 
   const handleClickOpen = () => {
     setOpen(true);
