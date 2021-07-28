@@ -145,7 +145,7 @@ const Login = () => {
         >
           Sign In With Google
         </Button>
-        <div className="sized_box_half"></div>
+        <div className="sized_box_1"></div>
         <Button
           variant="contained"
           color="inherit"

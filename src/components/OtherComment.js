@@ -11,7 +11,7 @@ const OtherComment = ({ comment }) => {
     <Fragment>
       <Grid item xs={10}>
         <Paper>
-          <Typography variant="h5" color="inherit" className={"sized_box_1"}>
+          <Typography variant="body2" color="inherit" className={"sized_box_1"}>
             {comment.message}
           </Typography>
         </Paper>
@@ -22,7 +22,7 @@ const OtherComment = ({ comment }) => {
         </Avatar>
       </Grid>
       <Grid item xs={12}>
-        <div className="sized_box_1"></div>
+        <div className="sized_box_half"></div>
       </Grid>
     </Fragment>
   );

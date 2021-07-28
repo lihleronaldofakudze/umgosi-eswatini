@@ -48,7 +48,7 @@ const Home = () => {
   const classes = useStyles();
   const [user] = useAuthState(auth);
   const postsRef = firestore.collection("posts");
-  const query = postsRef.orderBy("postedAt").limit(24);
+  const query = postsRef.orderBy("postedAt", "desc").limit(24);
   const [posts] = useCollectionData(query, { idField: "id" });
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -82,8 +82,8 @@ const Home = () => {
           uid: uid,
           photoURL: photoURL,
           displayName: displayName,
-          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          likes: 0,
+          postedAt: firebase.firestore.Timestamp.fromDate(new Date()),
+          likes: [],
         })
         .then((_) => {
           handleClose();
@@ -139,12 +139,8 @@ const Home = () => {
       >
         <AddIcon />
       </Fab>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="form-dialog-title"
-      >
-        <DialogTitle id="form-dialog-title">Make A Post</DialogTitle>
+      <Dialog open={open}>
+        <DialogTitle id="form-dialog-title">Post Umgosi</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -154,6 +150,7 @@ const Home = () => {
             multiline
             rows={4}
             maxRows={4}
+            variant="outlined"
             onChange={(e) => setMessage(e.target.value)}
           />
         </DialogContent>
@@ -166,12 +163,7 @@ const Home = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-        open={openAlert}
-        onClose={handleCloseAlert}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
+      <Dialog open={openAlert} onClose={handleCloseAlert}>
         <DialogTitle id="alert-dialog-title">Umgosi Eswatini</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
