@@ -12,6 +12,7 @@ import CardActions from "@material-ui/core/CardActions";
 import CardHeader from "@material-ui/core/CardHeader";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
+import CardMedia from "@material-ui/core/CardMedia";
 import Avatar from "@material-ui/core/Avatar";
 import Button from "@material-ui/core/Button";
 import Card from "@material-ui/core/Card";
@@ -22,25 +23,27 @@ import FavoriteBorderIcon from "@material-ui/icons/FavoriteBorder";
 import FavoriteIcon from "@material-ui/icons/Favorite";
 
 //Firebase
-import firebase, { auth, firestore } from "../services/firebase";
+import { useFirebase, useFirestore } from "react-redux-firebase";
 
 const Post = ({ post }) => {
   const history = useHistory();
-  const user = auth.currentUser;
+  const firebase = useFirebase();
+  const firestore = useFirestore();
+  const { uid } = firebase.auth().currentUser;
   const likePost = () => {
-    if (post.likes.includes(user.uid)) {
+    if (post.likes.includes(uid)) {
       firestore
         .collection("posts")
         .doc(post.id)
         .update({
-          likes: firebase.firestore.FieldValue.arrayRemove(user.uid),
+          likes: firebase.firestore.FieldValue.arrayRemove(uid),
         });
     } else {
       firestore
         .collection("posts")
         .doc(post.id)
         .update({
-          likes: firebase.firestore.FieldValue.arrayUnion(user.uid),
+          likes: firebase.firestore.FieldValue.arrayUnion(uid),
         });
     }
   };
@@ -62,10 +65,17 @@ const Post = ({ post }) => {
         <CardActionArea
           onClick={() => changePage(`/comments/${post.message}/${post.id}`)}
         >
-          {/* <CardMedia
-            image="/static/images/cards/contemplative-reptile.jpg"
-            title="Contemplative Reptile"
-          /> */}
+          {post.image ? (
+            <CardMedia
+              image={post.image}
+              title={post.message}
+              style={{
+                width: 100,
+                margin: "auto", // 16:9
+              }}
+              component="img"
+            />
+          ) : null}
           <CardContent>
             <Typography variant="h5" color="textSecondary" component="p">
               {post.message}
@@ -74,7 +84,7 @@ const Post = ({ post }) => {
         </CardActionArea>
         <CardActions>
           <IconButton size="small" color="primary" onClick={likePost}>
-            {post.likes.includes(user.uid) ? (
+            {post.likes.includes(uid) ? (
               <FavoriteIcon style={{ color: "#FF0000" }} />
             ) : (
               <FavoriteBorderIcon />

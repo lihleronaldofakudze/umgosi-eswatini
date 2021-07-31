@@ -23,8 +23,10 @@ import Grid from "@material-ui/core/Grid";
 import Donator from "../components/Donator";
 
 //Firebase
-import { useAuthState } from "react-firebase-hooks/auth";
-import firebase, { auth } from "../services/firebase";
+// import { useAuthState } from "react-firebase-hooks/auth";
+// import firebase, { auth } from "../services/firebase";
+import { useSelector } from "react-redux";
+import { useFirebase, isEmpty } from "react-redux-firebase";
 
 //Images
 import Umgosee from "../images/umgosee.png";
@@ -53,7 +55,9 @@ const useStyles = makeStyles((theme) => {
 const Login = () => {
   const classes = useStyles();
   const history = useHistory();
-  const [user] = useAuthState(auth);
+  // const [user] = useAuthState(auth);
+  const firebase = useFirebase();
+  const auth = useSelector((state) => state.firebase.auth);
   const [message, setMessage] = useState();
   const [open, setOpen] = useState(false);
 
@@ -74,7 +78,8 @@ const Login = () => {
       .setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .then(async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await auth
+        await firebase
+          .auth()
           .signInWithPopup(provider)
           .then((_) => {
             history.push("/");
@@ -97,7 +102,8 @@ const Login = () => {
       .setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .then(async () => {
         const provider = new firebase.auth.FacebookAuthProvider();
-        await auth
+        await firebase
+          .auth()
           .signInWithPopup(provider)
           .then((_) => {
             history.push("/");
@@ -121,7 +127,7 @@ const Login = () => {
     handleClickOpen();
   };
 
-  if (user !== null) {
+  if (!isEmpty(auth)) {
     return <Redirect to="/" />;
   }
 

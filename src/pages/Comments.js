@@ -30,8 +30,13 @@ import Comment from "../components/Comment";
 import OtherComment from "../components/OtherComment";
 
 //Firebase
-import { useCollectionData } from "react-firebase-hooks/firestore";
-import firebase, { auth, firestore } from "../services/firebase.js";
+import { useSelector } from "react-redux";
+import {
+  useFirebase,
+  useFirestore,
+  useFirestoreConnect,
+  isEmpty,
+} from "react-redux-firebase";
 
 //Comments Styles
 const useStyles = makeStyles((theme) => ({
@@ -64,14 +69,21 @@ const Comments = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const { post, id } = useParams();
-  const commentsRef = firestore
-    .collection("posts")
-    .doc(id)
-    .collection("comments");
-  const query = commentsRef.orderBy("postedAt").limit(24);
-  const [comments] = useCollectionData(query, { idField: "id" });
-
-  const user = auth.currentUser;
+  const firebase = useFirebase();
+  const firestore = useFirestore();
+  useFirestoreConnect([
+    {
+      collection: "posts",
+      doc: id,
+      subcollections: [{ collection: "comments" }],
+      storeAs: "comments",
+      orderBy: "postedAt",
+      limit: 24,
+    },
+  ]);
+  const comments = useSelector((state) => state.firestore.ordered.comments);
+  const auth = useSelector((state) => state.firebase.auth);
+  const { uid, photoURL, displayName } = firebase.auth().currentUser;
 
   const dummy = useRef();
 
@@ -87,14 +99,16 @@ const Comments = () => {
 
   const sendMessage = async () => {
     if (message) {
-      const { uid, photoURL, displayName } = auth.currentUser;
-      await commentsRef
+      await firestore
+        .collection("posts")
+        .doc(id)
+        .collection("comments")
         .add({
           message: message,
           uid: uid,
           photoURL: photoURL,
           displayName: displayName,
-          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          postedAt: firebase.firestore.Timestamp.fromDate(new Date()),
         })
         .then((_) => {
           setMessage("");
@@ -110,8 +124,8 @@ const Comments = () => {
     }
   };
 
-  if (user === null) {
-    return <Redirect to="/" />;
+  if (isEmpty(auth)) {
+    return <Redirect to="/login" />;
   }
 
   return (
@@ -129,7 +143,7 @@ const Comments = () => {
         <Grid container alignItems="center" spacing={1}>
           {comments &&
             comments.map((comment) => {
-              return user.uid === comment.uid ? (
+              return uid === comment.uid ? (
                 <OtherComment key={comment.id} comment={comment} />
               ) : (
                 <Comment key={comment.id} comment={comment} />

@@ -1,7 +1,10 @@
 import React, { useState, Fragment } from "react";
 
+//Extras
+import imageCompressor from "browser-image-compression";
+
 //React Router
-import { Redirect } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 
 //Material UI
 import DialogContentText from "@material-ui/core/DialogContentText";
@@ -26,9 +29,13 @@ import AddIcon from "@material-ui/icons/Add";
 import Post from "../components/Post";
 
 //Firebase
-import { useAuthState } from "react-firebase-hooks/auth";
-import { useCollectionData } from "react-firebase-hooks/firestore";
-import firebase, { auth, firestore } from "../services/firebase.js";
+import { useSelector } from "react-redux";
+import {
+  useFirestoreConnect,
+  isEmpty,
+  useFirebase,
+  useFirestore,
+} from "react-redux-firebase";
 
 //Home Styles
 const useStyles = makeStyles((theme) => {
@@ -46,14 +53,23 @@ const useStyles = makeStyles((theme) => {
 
 const Home = () => {
   const classes = useStyles();
-  const [user] = useAuthState(auth);
-  const postsRef = firestore.collection("posts");
-  const query = postsRef.orderBy("postedAt", "desc").limit(24);
-  const [posts] = useCollectionData(query, { idField: "id" });
+  const firebase = useFirebase();
+  const firestore = useFirestore();
+  const history = useHistory();
+  useFirestoreConnect([
+    {
+      collection: "posts",
+      orderBy: ["postedAt", "desc"],
+    },
+  ]);
+  const posts = useSelector((state) => state.firestore.ordered.posts);
+  const auth = useSelector((state) => state.firebase.auth);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [openAlert, setOpenAlert] = useState(false);
   const [dialogMessage, setDialogMessage] = useState();
+  const [image, setImage] = useState();
+  const [loading, setLoading] = useState(false);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -72,44 +88,113 @@ const Home = () => {
     setOpenAlert(false);
   };
 
-  const makeAPost = async () => {
-    if (message) {
-      const { uid, photoURL, displayName } = auth.currentUser;
+  const options = {
+    useWebWorker: true,
+  };
 
-      await postsRef
-        .add({
-          message: message,
-          uid: uid,
-          photoURL: photoURL,
-          displayName: displayName,
-          postedAt: firebase.firestore.Timestamp.fromDate(new Date()),
-          likes: [],
-        })
-        .then((_) => {
-          handleClose();
-        })
-        .catch((error) => {
-          setDialogMessage(error.message);
-          handleClickOpenAlert();
-        });
+  const makeAPost = async () => {
+    setLoading(true);
+    const { uid, photoURL, displayName } = firebase.auth().currentUser;
+    if (message) {
+      if (image) {
+        await imageCompressor(image, options)
+          .then((compressedImage) => {
+            firebase
+              .storage()
+              .ref(`posts/${compressedImage.name}`)
+              .put(compressedImage)
+              .then((_) => {
+                firebase
+                  .storage()
+                  .ref("posts")
+                  .child(compressedImage.name)
+                  .getDownloadURL()
+                  .then((url) => {
+                    firestore
+                      .collection("posts")
+                      .add({
+                        message: message,
+                        uid: uid,
+                        photoURL: photoURL,
+                        displayName: displayName,
+                        postedAt: firebase.firestore.Timestamp.fromDate(
+                          new Date()
+                        ),
+                        likes: [],
+                        image: url,
+                      })
+                      .then((_) => {
+                        handleClose();
+                        setLoading(false);
+                        setMessage("");
+                        setImage();
+                      })
+                      .catch((error) => {
+                        setLoading(false);
+                        setDialogMessage(error.message);
+                        handleClickOpenAlert();
+                      });
+                  })
+                  .catch((err) => {
+                    setLoading(false);
+                    setMessage(err.message);
+                    handleClickOpen();
+                  });
+              })
+              .catch((err) => {
+                setLoading(false);
+                setMessage(err.message);
+                handleClickOpen();
+              });
+          })
+          .catch((err) => {
+            setLoading(false);
+            setMessage(err.message);
+            handleClickOpen();
+          });
+      } else {
+        await firestore
+          .collection("posts")
+          .add({
+            message: message,
+            uid: uid,
+            photoURL: photoURL,
+            displayName: displayName,
+            postedAt: firebase.firestore.Timestamp.fromDate(new Date()),
+            likes: [],
+            image: "",
+          })
+          .then((_) => {
+            handleClose();
+            setLoading(false);
+            setMessage("");
+          })
+          .catch((error) => {
+            setLoading(false);
+            setMessage(error.message);
+            handleClickOpen();
+          });
+      }
     } else {
+      setLoading(false);
       handleClose();
       setDialogMessage("Please enter post message first");
       handleClickOpenAlert();
     }
   };
   const signOut = async () => {
-    await auth
+    await firebase
+      .auth()
       .signOut()
       .then((_) => {
-        window.location.reload();
+        history.push("/login");
       })
       .catch((error) => {
         setDialogMessage(error.message);
         handleClickOpenAlert();
       });
   };
-  if (user === null) {
+  if (isEmpty(auth)) {
     return <Redirect to="/login" />;
   }
   return (
@@ -153,12 +238,39 @@ const Home = () => {
             variant="outlined"
             onChange={(e) => setMessage(e.target.value)}
           />
+          {image ? (
+            <Fragment>
+              <Button
+                variant="text"
+                color="secondary"
+                onClick={() => setImage()}
+              >
+                Remove Image
+              </Button>
+              <img src={URL.createObjectURL(image)} alt="Post" width="100%" />
+            </Fragment>
+          ) : (
+            <Button
+              variant="contained"
+              fullWidth
+              color="secondary"
+              component="label"
+            >
+              Add Image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => setImage(e.target.files[0])}
+              />
+            </Button>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="primary">
             Cancel
           </Button>
-          <Button onClick={makeAPost} color="primary">
+          <Button onClick={makeAPost} color="primary" variant="contained">
             Post
           </Button>
         </DialogActions>
@@ -175,6 +287,14 @@ const Home = () => {
             Close
           </Button>
         </DialogActions>
+      </Dialog>
+      <Dialog open={loading}>
+        <DialogTitle id="alert-dialog-title">Umgosi Eswatini</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Please wait...
+          </DialogContentText>
+        </DialogContent>
       </Dialog>
     </Fragment>
   );
